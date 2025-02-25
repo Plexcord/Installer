@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/VencordInstaller.iml" filepath="$PROJECT_DIR$/.idea/VencordInstaller.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/PlexcordInstaller.iml" filepath="$PROJECT_DIR$/.idea/PlexcordInstaller.iml" />
     </modules>
   </component>
 </project>

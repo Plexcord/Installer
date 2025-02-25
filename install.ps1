@@ -1,5 +1,5 @@
-$DOWNLOAD_CLI = "https://github.com/Vencord/Installer/releases/latest/download/VencordInstallerCli.exe"
-$DOWNLOAD_GUI = "https://github.com/Vencord/Installer/releases/latest/download/VencordInstaller.exe"
+$DOWNLOAD_CLI = "https://github.com/Plexcord/Installer/releases/latest/download/PlexcordInstallerCli.exe"
+$DOWNLOAD_GUI = "https://github.com/Plexcord/Installer/releases/latest/download/PlexcordInstaller.exe"
 
 if ([Environment]::Is64BitOperatingSystem -and [System.Environment]::OSVersion.Version.Major -ge 10) {
 	Write-Output "=============================="
@@ -36,11 +36,11 @@ Write-Output ""
 
 if ($choice -eq 2) {
 	Write-Output "What do you want to do?"
-	Write-Output "1) Install Vencord"
+	Write-Output "1) Install Plexcord"
 	Write-Output "2) Install OpenAsar"
-	Write-Output "3) Uninstall Vencord"
+	Write-Output "3) Uninstall Plexcord"
 	Write-Output "4) Uninstall OpenAsar"
-	Write-Output "5) Reinstall & Update Vencord"
+	Write-Output "5) Reinstall & Update Plexcord"
 	Write-Output "Q) Quit without doing anything"
 	Write-Output ""
 	$choice = Read-Host "Please choose by typing a number or Q"

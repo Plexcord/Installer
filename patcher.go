@@ -21,15 +21,15 @@ var FilesDirErr error
 var Patcher string
 
 func init() {
-	if dir := os.Getenv("VENCORD_USER_DATA_DIR"); dir != "" {
-		Log.Debug("Using VENCORD_USER_DATA_DIR")
+	if dir := os.Getenv("PLEXCORD_USER_DATA_DIR"); dir != "" {
+		Log.Debug("Using PLEXCORD_USER_DATA_DIR")
 		BaseDir = dir
 	} else if dir = os.Getenv("DISCORD_USER_DATA_DIR"); dir != "" {
-		Log.Debug("Using DISCORD_USER_DATA_DIR/../VencordData")
-		BaseDir = path.Join(dir, "..", "VencordData")
+		Log.Debug("Using DISCORD_USER_DATA_DIR/../PlexcordData")
+		BaseDir = path.Join(dir, "..", "PlexcordData")
 	} else {
 		Log.Debug("Using UserConfig")
-		BaseDir = appdir.New("Vencord").UserConfig()
+		BaseDir = appdir.New("Plexcord").UserConfig()
 	}
 	FilesDir = path.Join(BaseDir, "dist")
 	if !ExistsFile(FilesDir) {

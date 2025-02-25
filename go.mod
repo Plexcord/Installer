@@ -1,4 +1,4 @@
-module vencordinstaller
+module plexcordinstaller
 
 go 1.21
 
