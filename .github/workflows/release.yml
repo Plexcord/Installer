@@ -35,18 +35,18 @@ jobs:
         run: go get -v
 
       - name: Build Cli
-        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -tags "static cli" -ldflags "-s -w -X 'vencordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'vencordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o VencordInstallerCli-linux
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -tags "static cli" -ldflags "-s -w -X 'plexcordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'plexcordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o PlexcordInstallerCli-linux
 
       - name: Update executable
         run: |
-          chmod +x VencordInstallerCli-linux
+          chmod +x PlexcordInstallerCli-linux
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: VencordInstaller-linux
+          name: PlexcordInstaller-linux
           path: |
-            VencordInstallerCli-linux
+            PlexcordInstallerCli-linux
 
 
   build-mac:
@@ -82,26 +82,26 @@ jobs:
         run: go get -v
 
       - name: Build
-        run: CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -v -tags static -ldflags "-s -w -X 'vencordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'vencordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o VencordInstaller
+        run: CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -v -tags static -ldflags "-s -w -X 'plexcordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'plexcordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o PlexcordInstaller
 
       - name: Update executable
         run: |
-          chmod +x VencordInstaller
+          chmod +x PlexcordInstaller
 
       - name: Generate MacOS bundle
         run: |
-          mkdir -p VencordInstaller.app/Contents/MacOS
-          mkdir -p VencordInstaller.app/Contents/Resources
-          cp macos/Info.plist VencordInstaller.app/Contents/Info.plist
-          mv VencordInstaller VencordInstaller.app/Contents/MacOS/VencordInstaller
-          cp macos/icon.icns VencordInstaller.app/Contents/Resources/icon.icns
-          zip -r VencordInstaller.MacOS.zip VencordInstaller.app
+          mkdir -p PlexcordInstaller.app/Contents/MacOS
+          mkdir -p PlexcordInstaller.app/Contents/Resources
+          cp macos/Info.plist PlexcordInstaller.app/Contents/Info.plist
+          mv PlexcordInstaller PlexcordInstaller.app/Contents/MacOS/PlexcordInstaller
+          cp macos/icon.icns PlexcordInstaller.app/Contents/Resources/icon.icns
+          zip -r PlexcordInstaller.MacOS.zip PlexcordInstaller.app
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: VencordInstaller-macos
-          path: VencordInstaller.MacOS.zip
+          name: PlexcordInstaller-macos
+          path: PlexcordInstaller.MacOS.zip
 
 
   build-windows:
@@ -149,22 +149,22 @@ jobs:
           export GOROOT=/mingw64/lib/go
           export GOPATH=/mingw64
           go-winres make --product-version "git-tag"
-          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -v -tags static -ldflags "-s -w -H=windowsgui -extldflags=-static -X 'vencordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'vencordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o VencordInstaller.exe
+          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -v -tags static -ldflags "-s -w -H=windowsgui -extldflags=-static -X 'plexcordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'plexcordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o PlexcordInstaller.exe
 
       - name: Build i386 Cli
         shell: msys2 {0}
         run: |
           export GOROOT=/mingw64/lib/go
           export GOPATH=/mingw64
-          CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -v -tags "static cli" -ldflags "-s -w -extldflags=-static -X 'vencordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'vencordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o VencordInstallerCli.exe
+          CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -v -tags "static cli" -ldflags "-s -w -extldflags=-static -X 'plexcordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'plexcordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o PlexcordInstallerCli.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: VencordInstaller-windows
+          name: PlexcordInstaller-windows
           path: |
-            VencordInstaller.exe
-            VencordInstallerCli.exe
+            PlexcordInstaller.exe
+            PlexcordInstallerCli.exe
 
 
   release:
@@ -177,17 +177,17 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: VencordInstaller-linux
+          name: PlexcordInstaller-linux
           path: linux
 
       - uses: actions/download-artifact@v4
         with:
-          name: VencordInstaller-macos
+          name: PlexcordInstaller-macos
           path: macos
 
       - uses: actions/download-artifact@v4
         with:
-          name: VencordInstaller-windows
+          name: PlexcordInstaller-windows
           path: windows
 
       - name: Create the release
@@ -199,6 +199,6 @@ jobs:
           prerelease: false
           draft: false
           files: |
-            linux/VencordInstallerCli-linux
-            macos/VencordInstaller.MacOS.zip
-            windows/VencordInstalle*.exe
+            linux/PlexcordInstallerCli-linux
+            macos/PlexcordInstaller.MacOS.zip
+            windows/PlexcordInstalle*.exe
