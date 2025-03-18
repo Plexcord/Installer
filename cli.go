@@ -17,7 +17,6 @@ import (
 	"github.com/manifoldco/promptui"
 	"os"
 	"runtime"
-	"slices"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -98,7 +97,7 @@ func main() {
 
 	install, uninstall, update, installOpenAsar, uninstallOpenAsar := *installFlag, *uninstallFlag, *updateFlag, *installOpenAsarFlag, *uninstallOpenAsarFlag
 	switches := []*bool{&install, &update, &uninstall, &installOpenAsar, &uninstallOpenAsar}
-	if !slices.ContainsFunc(switches, func(b *bool) bool { return *b }) {
+	if !SliceContainsFunc(switches, func(b *bool) bool { return *b }) {
 		go func() {
 			<-SelfUpdateCheckDoneChan
 			if IsSelfOutdated {
@@ -137,7 +136,7 @@ func main() {
 			exitSuccess()
 		}
 
-		*switches[slices.Index(choices, choice)] = true
+		*switches[SliceIndex(choices, choice)] = true
 	}
 
 	var err error
@@ -264,7 +263,7 @@ func PromptDiscord(action, dir, branch string) *DiscordInstall {
 	handlePromptError(err)
 
 	if choice != "Custom Location" {
-		return discords[slices.Index(items, choice)].(*DiscordInstall)
+		return discords[SliceIndex(items, choice)].(*DiscordInstall)
 	}
 
 	for {

@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/user"
 	path "path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -115,7 +114,7 @@ func FindDiscords() []any {
 
 		for _, child := range children {
 			name := child.Name()
-			if !child.IsDir() || !slices.Contains(LinuxDiscordNames, name) {
+			if !child.IsDir() || !SliceContains(LinuxDiscordNames, name) {
 				continue
 			}
 
