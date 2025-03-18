@@ -188,17 +188,17 @@ func exit(status int) {
 
 func exitSuccess() {
 	color.HiGreen("✔ Success!")
-	Exit(0)
+	exit(0)
 }
 
 func exitFailure() {
 	color.HiRed("❌ Failed!")
-	Exit(1)
+	exit(1)
 }
 
 func handlePromptError(err error) {
 	if errors.Is(err, promptui.ErrInterrupt) {
-		Exit(0)
+		exit(0)
 	}
 
 	Log.FatalIfErr(err)
