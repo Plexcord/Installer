@@ -2,8 +2,9 @@
 
 /*
  * SPDX-License-Identifier: GPL-3.0
- * Vencord Installer, a cross platform gui/cli app for installing Vencord
+ * Plexcord Installer, a cross platform gui/cli app for installing Plexcord
  * Copyright (c) 2023 Vendicated and Vencord contributors
+ * Copyright (c) 2025 MutanPlex
  */
 
 package main

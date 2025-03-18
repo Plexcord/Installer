@@ -3,7 +3,7 @@ $DOWNLOAD_GUI = "https://github.com/Plexcord/Installer/releases/latest/download/
 
 if ([Environment]::Is64BitOperatingSystem -and [System.Environment]::OSVersion.Version.Major -ge 10) {
 	Write-Output "=============================="
-	Write-Output "|      Vencord Installer     |"
+	Write-Output "|      Plexcord Installer     |"
 	Write-Output "=============================="
 	Write-Output ""
 	Write-Output "Which installer version do you want to use?"
