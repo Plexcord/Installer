@@ -22,6 +22,7 @@ import (
 )
 
 var discords []any
+var interactive = false
 
 func isValidBranch(branch string) bool {
 	switch branch {
@@ -96,6 +97,7 @@ func main() {
 	install, uninstall, update, installOpenAsar, uninstallOpenAsar := *installFlag, *uninstallFlag, *updateFlag, *installOpenAsarFlag, *uninstallOpenAsarFlag
 	switches := []*bool{&install, &update, &uninstall, &installOpenAsar, &uninstallOpenAsar}
 	if !SliceContainsFunc(switches, func(b *bool) bool { return *b }) {
+		interactive = true
 		go func() {
 			<-SelfUpdateCheckDoneChan
 			if IsSelfOutdated {
@@ -177,7 +179,7 @@ func main() {
 	exitSuccess()
 }
 func exit(status int) {
-	if runtime.GOOS == "windows" && IsDoubleClickRun() {
+	if runtime.GOOS == "windows" && IsDoubleClickRun()  && interactive{
 		fmt.Print("Press Enter to exit")
 		var b byte
 		_, _ = fmt.Scanf("%v", &b)
