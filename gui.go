@@ -659,26 +659,29 @@ func loop() {
 					return g.Label("To customise this location, set the environment variable 'PLEXCORD_USER_DATA_DIR' and restart me").Wrapped(true)
 				}, nil},
 				g.Dummy(0, 10),
-				g.Row(
-					g.Label("Installer Version: "+buildinfo.InstallerTag+" ("+buildinfo.InstallerGitHash+")"),
-					&CondWidget{IsSelfOutdated, func() g.Widget {
-						return g.Style().SetColor(g.StyleColorText, DiscordRed).To(
-							g.Label("- OUTDATED"),
-						)
-					}, nil},
-				),
-				g.Label("Local Plexcord Version: "+InstalledHash),
-				&CondWidget{
-					GithubError == nil,
-					func() g.Widget {
-						if IsDevInstall {
-							return g.Label("Not updating Plexcord due to being in DevMode")
-						}
-						return g.Label("Latest Plexcord Version: " + LatestHash)
-					}, func() g.Widget {
-						return renderErrorCard(DiscordRed, "Failed to fetch Info from GitHub: "+GithubError.Error(), 40)
+				g.Column(
+					g.Row(
+						g.Label("Installer Version: "+buildinfo.InstallerTag+" ("+buildinfo.InstallerGitHash+")"),
+						&CondWidget{IsSelfOutdated, func() g.Widget {
+							return g.Style().SetColor(g.StyleColorText, DiscordRed).To(
+								g.Label("- OUTDATED"),
+							)
+						}, nil},
+					),
+					g.Label("Local Plexcord Version: "+InstalledHash),
+					&CondWidget{
+						GithubError == nil,
+						func() g.Widget {
+							if IsDevInstall {
+								return g.Label("Not updating Plexcord due to being in DevMode")
+							}
+							return g.Label("Latest Plexcord Version: " + LatestHash)
+						}, func() g.Widget {
+							return renderErrorCard(DiscordRed, "Failed to fetch Info from GitHub: "+GithubError.Error(), 40)
+						},
 					},
-				},
+				),
+				
 			),
 
 			renderInstaller(),
