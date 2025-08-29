@@ -28,7 +28,12 @@ func init() {
 		BaseDir = path.Join(dir, "..", "PlexcordData")
 	} else {
 		Log.Debug("Using UserConfig")
-		BaseDir = appdir.New("Plexcord").UserConfig()
+	       BaseDir = appdir.New("Plexcord").UserConfig()
+	       if _, err := os.Stat(BaseDir); os.IsNotExist(err) {
+		       if err := os.MkdirAll(BaseDir, 0755); err != nil {
+			       Log.Warn("BaseDir folder could not be created:", err)
+		       }
+	       }
 	}
 	if dir := os.Getenv("PLEXCORD_DIRECTORY"); dir != "" {
 		Log.Debug(dir)
