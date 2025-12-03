@@ -6,6 +6,9 @@ on:
     tags:
       - v*
 
+permissions:
+  contents: read
+
 env:
   FORCE_COLOR: true
 
@@ -35,7 +38,7 @@ jobs:
         run: go get -v
 
       - name: Build Cli
-        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -tags "static cli" -ldflags "-s -w -X 'plexcordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'plexcordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o PlexcordInstallerCli-linux
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -trimpath -tags "static cli" -ldflags "-s -w -X 'plexcordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'plexcordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o PlexcordInstallerCli-linux
 
       - name: Update executable
         run: |
@@ -156,7 +159,7 @@ jobs:
         run: |
           export GOROOT=/mingw64/lib/go
           export GOPATH=/mingw64
-          CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -v -tags "static cli" -ldflags "-s -w -extldflags=-static -X 'plexcordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'plexcordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o PlexcordInstallerCli.exe
+          CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -v -trimpath -tags "static cli" -ldflags "-s -w -extldflags=-static -X 'plexcordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)' -X 'plexcordinstaller/buildinfo.InstallerTag=${{ github.ref_name }}'" -o PlexcordInstallerCli.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -170,6 +173,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: [build-linux, build-mac, build-windows]
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
