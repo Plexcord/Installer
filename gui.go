@@ -85,6 +85,7 @@ func main() {
 	}
 	
 	win.SetBgColor(Bg)
+	StyleTitleBar()
 	
 	win.Run(loop)
 }
