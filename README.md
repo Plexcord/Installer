@@ -2,7 +2,7 @@
 
 The Plexcord Installer allows you to install [Plexcord, the mod that takes Discord to the next level.](https://github.com/MutanPlex/Plexcord)
 
-![installer](https://github.com/user-attachments/assets/724b93fb-a703-4286-99fd-555ed01c74bf)
+![installer](https://github.com/user-attachments/assets/171d3d67-8e68-487a-9cd5-4c35ddad02ea)
 
 ## Usage
 
