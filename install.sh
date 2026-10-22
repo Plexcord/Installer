@@ -18,7 +18,7 @@ echo "Downloading Installer..."
 
 set -- "XDG_CONFIG_HOME=$XDG_CONFIG_HOME"
 
-curl -sS https://github.com/Plexcord/Installer/releases/latest/download/PlexcordInstallerCli-Linux \
+curl -sS https://github.com/Plexcord/Installer/releases/latest/download/PlexcordInstallerCli-linux \
   --output "$outfile" \
   --location \
   --fail

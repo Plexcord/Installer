@@ -90,6 +90,9 @@ func UpdateSelf() error {
 		return err
 	}
 	defer res.Body.Close()
+	if res.StatusCode >= 300 {
+		return errors.New("Failed to download update: " + res.Status)
+	}
 
 	tmp, err := os.CreateTemp(ownExeDir, "PlexcordInstallerUpdate")
 	if err != nil {
@@ -100,7 +103,7 @@ func UpdateSelf() error {
 		_ = os.Remove(tmp.Name())
 	}()
 	if err = tmp.Chmod(0o755); err != nil {
-		return fmt.Errorf("Failed to chmod 755", tmp.Name()+":", err)
+		return fmt.Errorf("Failed to chmod 755 %s: %w", tmp.Name(), err)
 	}
 
 	if _, err = io.Copy(tmp, res.Body); err != nil {

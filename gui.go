@@ -47,7 +47,8 @@ var (
 	acceptedOpenAsar   bool
 	showedUpdatePrompt bool
 
-	win *g.MasterWindow
+	win  *g.MasterWindow
+	logo image.Image
 )
 
 //go:embed winres/icon.png
@@ -80,9 +81,10 @@ func main() {
 		Log.Debug(iconBytes, len(iconBytes))
 	} else {
 		win.SetIcon([]image.Image{icon})
+		logo = icon
 	}
 	
-	win.SetBgColor(BgBlue)
+	win.SetBgColor(Bg)
 	
 	win.Run(loop)
 }
@@ -291,16 +293,16 @@ func RawInfoModal(id, title, description string, isOpenAsar bool) g.Widget {
 	return g.Style().
 		SetStyle(g.StyleVarWindowPadding, 30, 30).
 		SetStyleFloat(g.StyleVarWindowRounding, 12).
-		SetColor(g.StyleColorPopupBg, BgBlue).
+		SetColor(g.StyleColorPopupBg, Surface).
 		To(
 			g.PopupModal(id).
 				Flags(g.WindowFlagsNoTitleBar | Ternary(isDynamic, g.WindowFlagsAlwaysAutoResize, 0)).
 				Layout(
 					g.Align(g.AlignCenter).To(
-						g.Style().SetFontSize(30).To(
+						g.Style().SetFontSize(24).To(
 							g.Label(title),
 						),
-						g.Style().SetFontSize(20).To(
+						g.Style().SetFontSize(18).To(
 							g.Label(description).Wrapped(isDynamic),
 						),
 						&CondWidget{id == "#scuffed-install", func() g.Widget {
@@ -348,16 +350,16 @@ func UpdateModal() g.Widget {
 	return g.Style().
 		SetStyle(g.StyleVarWindowPadding, 30, 30).
 		SetStyleFloat(g.StyleVarWindowRounding, 12).
-		SetColor(g.StyleColorPopupBg, BgBlue).
+		SetColor(g.StyleColorPopupBg, Surface).
 		To(
 			g.PopupModal("#update-prompt").
 				Flags(g.WindowFlagsNoTitleBar | g.WindowFlagsAlwaysAutoResize).
 				Layout(
 					g.Align(g.AlignCenter).To(
-						g.Style().SetFontSize(30).To(
+						g.Style().SetFontSize(24).To(
 							g.Label("Your Installer is outdated!"),
 						),
-						g.Style().SetFontSize(20).To(
+						g.Style().SetFontSize(18).To(
 							g.Label(
 								"Would you like to update now?\n\n"+
 									"Once you press Update Now, the new installer will automatically be downloaded.\n"+
@@ -421,24 +423,79 @@ func renderInstaller() g.Widget {
 		g.OpenPopup("#update-prompt")
 	}
 
-	layout := g.Layout{
-		g.Dummy(0, 20),
-		g.Separator(),
-		g.Dummy(0, 5),
+	narrow := w < 760
+	bw := Ternary(narrow, (w-10)/2, (w-30)/4)
 
-		g.Style().SetFontSize(20).To(
-			renderErrorCard(
-				AlertBlue,
-				"**Github** and **plexcord.club** are the only official places to get Plexcord. Any other site claiming to be us is malicious.\n"+
-					"If you downloaded from any other source, you should delete / uninstall everything immediately, run a malware scan and change your Discord password.",
-				90,
+	btnInstall := g.Style().
+		SetColor(g.StyleColorButton, Accent).
+		SetColor(g.StyleColorButtonHovered, AccentHover).
+		SetColor(g.StyleColorButtonActive, AccentActive).
+		SetDisabled(GithubError != nil).
+		To(
+			g.Button("Install").
+				OnClick(handlePatch).
+				Size(bw, 46),
+			Tooltip("Patch the selected Discord Install"),
+		)
+	btnRepair := g.Style().
+		SetDisabled(GithubError != nil).
+		To(
+			g.Button("Reinstall / Repair").
+				OnClick(func() {
+					if IsDevInstall {
+						handlePatch()
+					} else {
+						err := InstallLatestBuilds()
+						if err == nil {
+							handlePatch()
+						}
+					}
+				}).
+				Size(bw, 46),
+			Tooltip("Reinstall & Update Plexcord"),
+		)
+	btnUninstall := g.Style().
+		SetColor(g.StyleColorButtonHovered, DiscordRed).
+		SetColor(g.StyleColorButtonActive, RedActive).
+		To(
+			g.Button("Uninstall").
+				OnClick(handleUnpatch).
+				Size(bw, 46),
+			Tooltip("Unpatch the selected Discord Install"),
+		)
+	btnOpenAsar := g.Style().To(
+		g.Button(Ternary(isOpenAsar, "Uninstall OpenAsar", Ternary(currentDiscord != nil, "Install OpenAsar", "(Un-)Install OpenAsar"))).
+			OnClick(handleOpenAsar).
+			Size(bw, 46),
+		Tooltip("Manage OpenAsar"),
+	)
+
+	layout := g.Layout{
+		g.Dummy(0, 8),
+
+		g.Style().SetFontSize(17).To(
+			renderCard(Surface,
+				"Only download Plexcord from GitHub or plexcord.club",
+				"Any other site offering Plexcord is not us and may try to steal your Discord account. "+
+					"If you got this installer anywhere else, close it, uninstall what you installed, run a malware scan and change your Discord password.",
+				g.Dummy(0, 2),
+				g.Style().SetStyle(g.StyleVarFramePadding, 12, 6).To(
+					g.Row(
+						g.Button("Source code on GitHub").OnClick(func() {
+							g.OpenURL("https://github.com/Plexcord/Installer")
+						}),
+						g.Button("plexcord.club").OnClick(func() {
+							g.OpenURL("https://plexcord.club")
+						}),
+					),
+				),
 			),
 		),
 
-		g.Dummy(0, 5),
+		g.Dummy(0, 12),
 
-		g.Style().SetFontSize(30).To(
-			g.Label("Please select an install to patch"),
+		g.Style().SetFontSize(24).To(
+			g.Label("Select a Discord install"),
 		),
 
 		&CondWidget{len(discords) == 0, func() g.Widget {
@@ -449,16 +506,21 @@ func renderInstaller() g.Widget {
 			return g.Label(s)
 		}, nil},
 
-		g.Style().SetFontSize(20).To(
+		g.Style().SetFontSize(18).To(
 			g.RangeBuilder("Discords", discords, func(i int, v any) g.Widget {
 				d := v.(*DiscordInstall)
 				//goland:noinspection GoDeprecation
-				text := strings.Title(d.branch) + " - "
-				if d.isPatched {
-					text += "[PATCHED]"
-				}
-				return g.RadioButton(text, radioIdx == i).
+				radio := g.RadioButton(strings.Title(d.branch), radioIdx == i).
 					OnChange(makeRadioOnChange(i))
+				if !d.isPatched {
+					return radio
+				}
+				return g.Row(
+					radio,
+					g.Style().SetColor(g.StyleColorText, AccentText).To(
+						g.Label("Plexcord installed"),
+					),
+				)
 			}),
 
 			g.RadioButton("Custom Install Location", radioIdx == customChoiceIdx).
@@ -468,10 +530,10 @@ func renderInstaller() g.Widget {
 		g.Dummy(0, 5),
 		g.Style().
 			SetStyle(g.StyleVarFramePadding, 16, 16).
-			SetFontSize(20).
+			SetFontSize(18).
 			To(
 				g.InputText(&customDir).Hint("The custom location").
-					Size(w - 16).
+					Size(w).
 					Flags(g.InputTextFlagsCallbackCompletion).
 					OnChange(onCustomInputChanged).
 					// this library has its own autocomplete but it's broken
@@ -514,64 +576,9 @@ func renderInstaller() g.Widget {
 
 		g.Dummy(0, 20),
 
-		g.Style().SetFontSize(20).To(
-			g.Row(
-				g.Style().
-					SetColor(g.StyleColorButton, DiscordGreen).
-					SetColor(g.StyleColorButtonHovered, color.RGBA{R: 0x3D, G: 0x8C, B: 0x56, A: 0xFF}).
-					SetColor(g.StyleColorButtonActive, color.RGBA{R: 0x1D, G: 0x6C, B: 0x36, A: 0xFF}).
-					SetDisabled(GithubError != nil).
-					To(
-						g.Button("Install").
-							OnClick(handlePatch).
-							Size((w-40)/4, 50),
-						Tooltip("Patch the selected Discord Install"),
-					),
-				g.Style().
-					SetColor(g.StyleColorButton, DiscordBlue).
-					SetColor(g.StyleColorButtonHovered, color.RGBA{R: 0x68, G: 0x75, B: 0xFF, A: 0xFF}).
-					SetColor(g.StyleColorButtonActive, color.RGBA{R: 0x48, G: 0x55, B: 0xE2, A: 0xFF}).
-					SetDisabled(GithubError != nil).
-					To(
-						g.Button("Reinstall / Repair").
-							OnClick(func() {
-								if IsDevInstall {
-									handlePatch()
-								} else {
-									err := InstallLatestBuilds()
-									if err == nil {
-										handlePatch()
-									}
-								}
-							}).
-							Size((w-40)/4, 50),
-						Tooltip("Reinstall & Update Plexcord"),
-					),
-				g.Style().
-					SetColor(g.StyleColorButton, DiscordRed).
-					SetColor(g.StyleColorButtonHovered, color.RGBA{R: 0xFF, G: 0x51, B: 0x54, A: 0xFF}).
-					SetColor(g.StyleColorButtonActive, color.RGBA{R: 0xDC, G: 0x31, B: 0x34, A: 0xFF}).
-					To(
-						g.Button("Uninstall").
-							OnClick(handleUnpatch).
-							Size((w-40)/4, 50),
-						Tooltip("Unpatch the selected Discord Install"),
-					),
-				g.Style().
-					SetColor(g.StyleColorButton, Ternary(isOpenAsar, DiscordRed, DiscordGreen)).
-					SetColor(g.StyleColorButtonHovered, Ternary(isOpenAsar, 
-						color.RGBA{R: 0xFF, G: 0x51, B: 0x54, A: 0xFF}, 
-						color.RGBA{R: 0x3D, G: 0x8C, B: 0x56, A: 0xFF})).
-					SetColor(g.StyleColorButtonActive, Ternary(isOpenAsar, 
-						color.RGBA{R: 0xDC, G: 0x31, B: 0x34, A: 0xFF}, 
-						color.RGBA{R: 0x1D, G: 0x6C, B: 0x36, A: 0xFF})).
-					To(
-						g.Button(Ternary(isOpenAsar, "Uninstall OpenAsar", Ternary(currentDiscord != nil, "Install OpenAsar", "(Un-)Install OpenAsar"))).
-							OnClick(handleOpenAsar).
-							Size((w-40)/4, 50),
-						Tooltip("Manage OpenAsar"),
-					),
-			),
+		g.Style().SetFontSize(19).To(
+			Ternary(narrow, g.Layout{g.Row(btnInstall, btnRepair), g.Row(btnUninstall, btnOpenAsar)},
+				g.Layout{g.Row(btnInstall, btnRepair, btnUninstall, btnOpenAsar)}),
 		),
 
 		InfoModal("#patched", "Successfully Patched", "If Discord is still open, fully close it first.\n"+
@@ -599,28 +606,38 @@ func renderInstaller() g.Widget {
 	return layout
 }
 
-func renderErrorCard(col color.Color, message string, height float32) g.Widget {
+var cardHeights = map[string]float32{}
+
+func renderCard(bg color.Color, title, body string, footer ...g.Widget) g.Widget {
+	const pad, itemSpacing = 18, 10
+	h := cardHeights[title]
+	if h == 0 {
+		h = 120
+	}
+	measure := g.Custom(func() {
+		if got := imgui.CursorPosY() - itemSpacing + pad; got != cardHeights[title] {
+			cardHeights[title] = got
+			g.Update()
+		}
+	})
+
 	return g.Style().
-		SetColor(g.StyleColorChildBg, col).
-		SetStyleFloat(g.StyleVarAlpha, 0.9).
-		SetStyle(g.StyleVarWindowPadding, 10, 10).
-		SetStyleFloat(g.StyleVarChildRounding, 5).
+		SetColor(g.StyleColorChildBg, bg).
+		SetStyle(g.StyleVarWindowPadding, pad, pad).
 		To(
 			g.Child().
-				Size(g.Auto, height).
-				Layout(
-					g.Row(
-						g.Style().SetColor(g.StyleColorText, TextGray).To(
-							g.Markdown(&message),
-						),
-					),
-				),
+				Size(g.Auto, h).
+				Flags(g.WindowFlagsAlwaysUseWindowPadding|g.WindowFlagsNoScrollbar|g.WindowFlagsNoScrollWithMouse).
+				Layout(append(g.Layout{
+					g.Style().SetFontSize(20).To(g.Label(title)),
+					g.Style().SetColor(g.StyleColorText, Muted).To(g.Label(body).Wrapped(true)),
+				}, append(footer, measure)...)...),
 		)
 }
 
 func loop() {
-	g.PushWindowPadding(48, 48)
-	g.PushStyleColor(g.StyleColorWindowBg, BgBlue)
+	g.PushWindowPadding(48, 40)
+	g.PushStyleColor(g.StyleColorWindowBg, Bg)
 
 	g.SingleWindow().
 		RegisterKeyboardShortcuts(
@@ -636,55 +653,87 @@ func loop() {
 			}},
 		).
 		Layout(
-			g.Align(g.AlignCenter).To(
-				g.Style().SetFontSize(40).To(
-					g.Label("Plexcord Installer"),
-				),
-			),
-
-			g.Dummy(0, 20),
-			g.Style().SetFontSize(20).To(
-				g.Row(
-					g.Label(Ternary(IsDevInstall, "Dev Install: ", "Plexcord will be downloaded to: ")+PlexcordDirectory),
-					g.Style().
-						SetColor(g.StyleColorButton, DiscordBlue).
-						SetStyle(g.StyleVarFramePadding, 7, 4).
-						To(
-							g.Button("Open Directory").OnClick(func() {
-								g.OpenURL("file://" + path.Dir(PlexcordDirectory))
-							}),
-						),
-				),
-				&CondWidget{!IsDevInstall, func() g.Widget {
-					return g.Label("To customise this location, set the environment variable 'PLEXCORD_USER_DATA_DIR' and restart me").Wrapped(true)
-				}, nil},
-				g.Dummy(0, 10),
-				g.Column(
+			g.Style().
+				SetStyleFloat(g.StyleVarFrameRounding, 6).
+				SetStyleFloat(g.StyleVarChildRounding, 8).
+				SetStyleFloat(g.StyleVarPopupRounding, 10).
+				SetStyleFloat(g.StyleVarGrabRounding, 6).
+				SetStyleFloat(g.StyleVarScrollbarRounding, 6).
+				SetStyleFloat(g.StyleVarFrameBorderSize, 0).
+				SetStyleFloat(g.StyleVarChildBorderSize, 0).
+				SetStyleFloat(g.StyleVarPopupBorderSize, 0).
+				SetStyle(g.StyleVarItemSpacing, 10, 10).
+				SetColor(g.StyleColorText, Ink).
+				SetColor(g.StyleColorTextDisabled, Muted).
+				SetColor(g.StyleColorChildBg, Surface).
+				SetColor(g.StyleColorPopupBg, Surface).
+				SetColor(g.StyleColorFrameBg, Field).
+				SetColor(g.StyleColorFrameBgHovered, Surface).
+				SetColor(g.StyleColorFrameBgActive, Field).
+				SetColor(g.StyleColorButton, Button).
+				SetColor(g.StyleColorButtonHovered, ButtonHover).
+				SetColor(g.StyleColorButtonActive, ButtonActive).
+				SetColor(g.StyleColorCheckMark, Accent).
+				SetColor(g.StyleColorScrollbarBg, Bg).
+				SetColor(g.StyleColorScrollbarGrab, Button).
+				SetColor(g.StyleColorModalWindowDimBg, color.RGBA{A: 0xA0}).
+				To(
 					g.Row(
-						g.Label("Installer Version: "+buildinfo.InstallerTag+" ("+buildinfo.InstallerGitHash+")"),
-						&CondWidget{IsSelfOutdated, func() g.Widget {
-							return g.Style().SetColor(g.StyleColorText, DiscordRed).To(
-								g.Label("- OUTDATED"),
-							)
+						&CondWidget{logo != nil, func() g.Widget {
+							return g.ImageWithRgba(logo).Size(52, 52)
 						}, nil},
+						g.Column(
+							g.Style().SetFontSize(30).To(
+								g.Label("Plexcord Installer"),
+							),
+							g.Style().SetFontSize(17).SetColor(g.StyleColorText, Muted).To(
+								g.Label("Official installer for Plexcord, a Discord client mod"),
+							),
+						),
 					),
-					g.Label("Local Plexcord Version: "+InstalledHash),
-					&CondWidget{
-						GithubError == nil,
-						func() g.Widget {
-							if IsDevInstall {
-								return g.Label("Not updating Plexcord due to being in DevMode")
-							}
-							return g.Label("Latest Plexcord Version: " + LatestHash)
-						}, func() g.Widget {
-							return renderErrorCard(DiscordRed, "Failed to fetch Info from GitHub: "+GithubError.Error(), 40)
-						},
-					},
-				),
-				
-			),
 
-			renderInstaller(),
+					&CondWidget{GithubError != nil, func() g.Widget {
+						return g.Style().SetFontSize(17).To(
+							renderCard(DiscordRed, "Couldn't reach GitHub",
+								"Installing is turned off until the installer can check for the latest Plexcord version. "+
+									"Check your internet connection and restart the installer.\n"+GithubError.Error(),
+								),
+						)
+					}, nil},
+
+					renderInstaller(),
+
+					// technical details last, for people who want to check them
+					g.Dummy(0, 16),
+					g.Style().SetFontSize(16).SetColor(g.StyleColorText, Muted).To(
+						g.Label(Ternary(IsDevInstall, "Dev install: ", "Plexcord is downloaded from its GitHub releases to ")+PlexcordDirectory).Wrapped(true),
+						g.Row(
+							g.Style().
+								SetColor(g.StyleColorText, Ink).
+								SetStyle(g.StyleVarFramePadding, 10, 4).
+								To(
+									g.Button("Open folder").OnClick(func() {
+										g.OpenURL("file://" + path.Dir(PlexcordDirectory))
+									}),
+								),
+							&CondWidget{!IsDevInstall, func() g.Widget {
+								return g.Label("Set PLEXCORD_USER_DATA_DIR to change it.")
+							}, nil},
+						),
+						g.Row(
+							g.Label("Installer "+buildinfo.InstallerTag+" ("+buildinfo.InstallerGitHash+")"),
+							&CondWidget{IsSelfOutdated, func() g.Widget {
+								return g.Style().SetColor(g.StyleColorText, DiscordRed).To(
+									g.Label("·  update available"),
+								)
+							}, nil},
+							g.Label("·  Installed "+InstalledHash),
+							&CondWidget{GithubError == nil, func() g.Widget {
+								return g.Label(Ternary(IsDevInstall, "·  Dev mode, not updating", "·  Latest "+LatestHash))
+							}, nil},
+						),
+					),
+				),
 		)
 
 	g.PopStyleColor()
